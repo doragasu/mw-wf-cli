@@ -638,7 +638,11 @@ int main( int argc, char **argv )
 	}
 
 	// TODO WARNING: Does not work if this is not here!!!
-	sleep(1);
+#ifdef __WIN32__
+	Sleep(1000);
+#else
+    sleep(1);
+#endif
 
 	/****************** ↓↓↓↓↓↓ DO THE MAGIC HERE ↓↓↓↓↓↓ *******************/
 

@@ -9,16 +9,28 @@
  ****************************************************************************/
 #include <stdio.h>
 #include <sys/types.h>
+#ifdef __WIN32__
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#endif
 #include <unistd.h>
 #include <string.h>
 #include "wflash.h"
 #include "util.h"
 #include "cmds.h"
+
+// Function name mangling for WIN32 compatibility
+#ifdef __WIN32__
+#define closesck closesocket
+#else
+#define closesck close
+#endif
 
 /// Local module data structure.
 typedef struct {
@@ -42,13 +54,20 @@ static WfData d;
  ****************************************************************************/
 void WfInit(void) {
 	memset(&d, 0, sizeof(WfData));
+#ifdef __WIN32__
+    // Stupid winsock stuff
+   WORD versionWanted = MAKEWORD(1, 1);
+   WSADATA wsaData;
+   WSAStartup(versionWanted, &wsaData);
+#endif
 }
 
 int WfConnect(char host[], uint16_t port) {
 	const struct addrinfo hints = {
-		.ai_family = AF_INET,
-		.ai_socktype = SOCK_STREAM,
-	};
+	    .ai_family = AF_INET,
+	    .ai_socktype = SOCK_STREAM,
+    };
+
 	struct addrinfo *srvInfo;
 	char strPort[6];
 	int flag = 1; 
@@ -74,12 +93,12 @@ int WfConnect(char host[], uint16_t port) {
 	if (setsockopt(d.sock, IPPROTO_TCP, TCP_NODELAY, (char*)&flag,
 			sizeof(int))) {
 		freeaddrinfo(srvInfo);
-		close(d.sock);
+		closesck(d.sock);
 		PrintErr("Could not set socket options!\n");
 	}
 	// ... and connect!
 	if (connect(d.sock, srvInfo->ai_addr, srvInfo->ai_addrlen) != 0) {
-		close(d.sock);
+		closesck(d.sock);
 		freeaddrinfo(srvInfo);
 		PrintErr("Could not connect to %s:%s.\n", host, strPort);
 		return WF_ERROR;
@@ -92,16 +111,16 @@ int WfConnect(char host[], uint16_t port) {
 }
 
 void WfClose(void) {
-	if (d.connected) close(d.sock);
+	if (d.connected) closesck(d.sock);
 }
 
 // NOTE: Data must be directly copied to d.buf.cmd.data
 static inline int WfCmdSend(uint16_t cmd, uint16_t dataLen) {
 	d.buf.cmd.cmd = cmd;
 	d.buf.cmd.len = dataLen;
-	if (send(d.sock, &d.buf, dataLen + WF_HEADLEN, 0) !=
+	if (send(d.sock, (char*)&d.buf, dataLen + WF_HEADLEN, 0) !=
 			(dataLen + WF_HEADLEN)) {
-		close(d.sock);
+		closesck(d.sock);
 		d.connected = FALSE;
 		PrintErr("Error sending data to server!\n");
 		return WF_ERROR;
@@ -113,10 +132,10 @@ static inline int WfCmdSend(uint16_t cmd, uint16_t dataLen) {
 static inline int WfReplyRecv(int dataLen) {
 	int recvd;
 
-	recvd = recv(d.sock, &d.buf, WF_HEADLEN + dataLen, 0);
+	recvd = recv(d.sock, (char*)&d.buf, WF_HEADLEN + dataLen, 0);
 	if ((recvd != (WF_HEADLEN + dataLen)) || (d.buf.cmd.cmd != WF_OK) ||
 			(d.buf.cmd.len != dataLen)) {
-		close(d.sock);
+		closesck(d.sock);
 		d.connected = FALSE;
 		PrintErr("Error receiving data from server!\n");
 		return WF_ERROR;
@@ -226,7 +245,7 @@ int WfFlash(uint32_t addr, uint32_t len, uint8_t data[]) {
 //			return WF_ERROR;
 //		}
 //	}
-	if (send(d.sock, data, len, 0) != len) {
+	if (send(d.sock, (char*)data, len, 0) != len) {
 		PrintErr("Error sending data!\n");
 		return WF_ERROR;
 	}
@@ -262,7 +281,7 @@ uint32_t WfRead(uint32_t addr, uint32_t len, uint8_t buf[]) {
 	}
 	// Receive data
 	total = 0;
-	while ((recvd = recv(d.sock, buf + total, len - total, 0)) > 0) {
+	while ((recvd = recv(d.sock, (char*)(buf + total), len - total, 0)) > 0) {
 		total += recvd;
 	}
 

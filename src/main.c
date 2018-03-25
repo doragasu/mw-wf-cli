@@ -784,6 +784,7 @@ dealloc_exit:
 #ifndef __OS_WIN
 	// Restore cursor
 	printf("\e[?25h");
+    WSACleanup();
 #endif
 
     return errCode;

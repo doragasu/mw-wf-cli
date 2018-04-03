@@ -61,7 +61,7 @@ static const RomHead h = {
 	// program is meant for little-endian architectures, and m68k
 	// is big endian.
 	// Vectors
-	 0x00FEFF00,  0x00E03F00,  0xB0E03F00,  0xC6E03F00,
+	 0x00FEFF00,  0x00803F00,  0xB0E03F00,  0xC6E03F00,
 	 0xDCE03F00,  0xF2E03F00,  0x08E13F00,  0x1EE13F00,
 	 0x34E13F00,  0x4AE13F00,  0x60E13F00,  0x60E13F00,
 	{0x76E13F00,  0x76E13F00,  0x76E13F00,  0x76E13F00,
@@ -86,7 +86,7 @@ static const RomHead h = {
     "GM 00000000-00",
     0x0000,
     "JD              ",
-    0x00E03F00,
+    0x00803F00,
     0x00004000,
 	0x0000FF00,
 	0xFFFFFF00,

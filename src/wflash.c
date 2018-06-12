@@ -73,7 +73,7 @@ int WfConnect(char host[], uint16_t port) {
 	int flag = 1; 
 
 	// DNS lookup code
-	snprintf(strPort, 5, "%d", port);
+	snprintf(strPort, 6, "%d", port);
 	strPort[5] = '\0';
 	if ((getaddrinfo(host, strPort, &hints, &srvInfo) != 0) || (!srvInfo)) {
 		PrintErr("DNS error for %s:%s\n", host, strPort);

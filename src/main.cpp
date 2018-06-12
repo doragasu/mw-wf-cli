@@ -313,7 +313,7 @@ uint16_t *AllocAndFlash(MemImage *fWr, int autoErase, int noPatch,
 	    fseek(rom, 0, SEEK_SET);
 	}
 
-    writeBuf = malloc(fWr->len);
+    writeBuf = (uint16_t*)malloc(fWr->len);
 	if (!writeBuf) {
 		perror("Allocating write buffer RAM");
 		fclose(rom);
@@ -377,7 +377,7 @@ uint16_t *AllocAndRead(MemImage *fRd, int columns) {
 	// Address string, e.g.: 0x123456
 	char addrStr[9];
 
-	readBuf = malloc(fRd->len);
+	readBuf = (uint16_t*)malloc(fRd->len);
 	if (!readBuf) {
 		perror("Allocating read buffer RAM");
 		return NULL;

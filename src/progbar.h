@@ -19,6 +19,10 @@
 #ifndef _PROGBAR_H_
 #define _PROGBAR_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /************************************************************************//**
  * Draws the progress bar.
  *
@@ -31,6 +35,10 @@ void ProgBarDraw(unsigned int pos, unsigned int max, unsigned int width,
 		char text[]);
 
 #endif /*_PROGBAR_H_*/
+
+#ifdef __cplusplus
+}
+#endif
 
 /** \} */
 

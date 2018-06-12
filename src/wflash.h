@@ -18,6 +18,10 @@
 /// Function completed with error
 #define WF_ERROR	-1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /************************************************************************//**
  * Module initialization. Must be called once before using the module.
  ****************************************************************************/
@@ -119,6 +123,10 @@ int WfBoot(uint32_t addr);
  * ROM upload utility.
  ****************************************************************************/
 int WfAutoRun(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*_WFLASH_H_*/
 

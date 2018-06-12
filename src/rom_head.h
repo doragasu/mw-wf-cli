@@ -20,6 +20,9 @@
 /// Lengh of the complete header (including vectors) in bytes
 #define ROM_HEAD_LEN	512
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /************************************************************************//**
  * Patches the ROM header for the wflash bootloader to be launched instead
@@ -28,6 +31,10 @@
  * \param[inout] head Pointer to the ROM, including the complete header
  ****************************************************************************/
 void RomHeadPatch(uint8_t *head);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*_ROM_HEAD_H_*/
 

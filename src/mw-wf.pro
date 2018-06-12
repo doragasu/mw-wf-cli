@@ -25,5 +25,5 @@ QMAKE_CXXFLAGS += $$GLIBINC
 DEFINES += QT
 
 # Input files
-HEADERS = cmds.h progbar.h rom_head.h util.h wflash.h
-SOURCES += main.cpp progbar.c rom_head.c wflash.c
+HEADERS = cmds.h con_dlg.h flash_man.h flashdlg.h progbar.h rom_head.h util.h wflash.h
+SOURCES += con_dlg.cpp flash_man.cpp flashdlg.cpp main.cpp progbar.c rom_head.c wflash.c

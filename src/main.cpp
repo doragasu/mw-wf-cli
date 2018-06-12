@@ -23,6 +23,18 @@
 #include "wflash.h"
 #include "rom_head.h"
 
+#if (defined(__OS_WIN) && defined(QT_STATIC))
+// Windows static builds need to import Windows Integration plugin
+#include <QtPlugin>
+Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+#endif
+
+#ifdef QT
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QMessageBox>
+#include "flashdlg.h"
+#endif
+
 /// Maximum length of the file name string.
 #define MAX_FILELEN		255
 /// Maximum length of a write command.
@@ -63,6 +75,7 @@ typedef struct {
 
 /// Available command-lline options
 static const struct option opt[] = {
+		{"qt-gui",	    no_argument,	    NULL,   'Q'},
 		{"wflash-addr",	required_argument,	NULL,   'a'},
 		{"wflash-port",	required_argument,	NULL,   'p'},
         {"flash",       required_argument,  NULL,   'f'},
@@ -85,6 +98,7 @@ static const struct option opt[] = {
 
 /// Description of each option
 static const char *description[] = {
+	"Launch Qt GUI",
 	"wflash server address (default 192.168.1.60)",
 	"wflash server port (default 1989)",
 	"Flash rom file",
@@ -439,6 +453,8 @@ int main( int argc, char **argv )
 	uint32_t bootAddr = 0;
 	// Temporary uint16_t pointer
 	uint8_t *tmp;
+    // Launch Qt GUI
+    int useQt = FALSE;
 
 	// Loop iteration
 	int i;
@@ -452,9 +468,13 @@ int main( int argc, char **argv )
         // Character returned by getopt_long()
         int c;
 
-        while ((c = getopt_long(argc, argv, "a:p:f:r:es:VnB:AiPbdRvh", opt, &opIdx)) != -1) {
+        while ((c = getopt_long(argc, argv, "Qa:p:f:r:es:VnB:AiPbdRvh", opt, &opIdx)) != -1) {
 			// Parse command-line options
             switch (c) {
+                case 'Q':
+                    useQt = TRUE;
+                    break;
+
 				case 'a': // Set server address
 					srvAddr = optarg;
 					break;
@@ -548,16 +568,30 @@ int main( int argc, char **argv )
                 case '?':       // Unknown switch
 					putchar('\n');
                 	PrintHelp(argv[0]);
+                    exit(1);
                 return 1;
             }
         }
-    }
-    else
-    {
+    } else {
 		printf("Nothing to do!\n");
 		PrintHelp(argv[0]);
 		return 0;
-}
+    }
+
+	// Try launching QT GUI if requested
+	if (useQt) {
+#ifdef QT
+		QApplication app (argc, argv);
+
+		FlashDialog dlg;
+		dlg.show();
+		return app.exec();
+#else
+		PrintErr("Requested QT GUI, but MDMA has not been compiled with QT!\n");
+		return -1;
+#endif
+	}
+
 
 	if (optind < argc) {
 		PrintErr("Unsupported parameter:");

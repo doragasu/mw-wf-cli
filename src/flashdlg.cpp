@@ -393,9 +393,6 @@ void FlashWriteTab::Flash(void) {
 
 FlashDialog::FlashDialog(void) {
 	InitUI();
-
-    ConDialog conDlg;
-    printf("Salida: %d\n", conDlg.exec());
 }
 
 void FlashDialog::InitUI(void) {

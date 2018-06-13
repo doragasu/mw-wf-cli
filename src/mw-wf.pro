@@ -8,7 +8,7 @@ TEMPLATE = app
 TARGET = wflash
 INCLUDEPATH += .
 
-QT += widgets
+QT += widgets network
 
 DEFINES += QT_DEPRECATED_WARNINGS
 

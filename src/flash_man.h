@@ -35,7 +35,7 @@ public:
      * \param[in] host Host name.
      * \param[in] port Port number.
      ************************************************************************/
-    FlashMan(const char *host, uint16_t port);
+//    FlashMan(const char *host, uint16_t port);
 
     bool IsConnected(void);
 
@@ -144,7 +144,7 @@ signals:
 
 private:
     /// Prohibit using the default constructor
-    FlashMan(void);
+//    FlashMan(void);
 };
 
 #endif /*_FLASH_MAN_H_*/

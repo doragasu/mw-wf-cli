@@ -32,6 +32,7 @@ Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 #ifdef QT
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
+#include "con_dlg.h"
 #include "flashdlg.h"
 #endif
 
@@ -582,9 +583,33 @@ int main( int argc, char **argv )
 	if (useQt) {
 #ifdef QT
 		QApplication app (argc, argv);
+        QTcpSocket sck;
+        int port;
 
-		FlashDialog dlg;
-		dlg.show();
+        {
+    		ConDialog cDlg;
+    		if (!cDlg.exec()) {
+                return -1;
+            }
+            port = atoi(cDlg.port->text().toStdString().c_str());
+            if ((port <= 0) || (port > UINT16_MAX)) {
+                printf("INVALID PORT\n");
+                return -1;
+            }
+            printf("Connect to %s:%d\n", cDlg.addr->text().toStdString().c_str(),
+                    port);
+            ConnectingDialog ciDlg(&sck, cDlg.addr->text().toStdString().c_str(),
+                    port);
+            if (!ciDlg.exec()) {
+                printf("CONNECTION FAILURE");
+                return -1;
+            }
+            printf("CONNECTED!\n");
+        }
+
+
+        FlashDialog fDlg;
+        fDlg.show();
 		return app.exec();
 #else
 		PrintErr("Requested QT GUI, but MDMA has not been compiled with QT!\n");

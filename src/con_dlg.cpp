@@ -12,6 +12,11 @@ ConDialog::ConDialog(void) {
 	InitUI();
 }
 
+void ConDialog::Exit(void) {
+    setResult(1);
+    close();
+}
+
 /********************************************************************//**
  * Initialize the dialog with the tabs.
  ************************************************************************/
@@ -25,7 +30,7 @@ void ConDialog::InitUI(void) {
     QPushButton *connBtn = new QPushButton("CONNECT");
     QPushButton *exitBtn = new QPushButton("EXIT");
 
-	connect(exitBtn, SIGNAL(clicked()), this, SLOT(close()));
+	connect(exitBtn, SIGNAL(clicked()), this, SLOT(Exit()));
 
 	QHBoxLayout *addrLayout = new QHBoxLayout;
     addrLayout->addWidget(addr);

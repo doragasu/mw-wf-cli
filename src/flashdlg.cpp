@@ -395,7 +395,7 @@ FlashDialog::FlashDialog(void) {
 	InitUI();
 
     ConDialog conDlg;
-    conDlg.exec();
+    printf("Salida: %d\n", conDlg.exec());
 }
 
 void FlashDialog::InitUI(void) {

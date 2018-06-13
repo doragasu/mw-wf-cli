@@ -29,6 +29,16 @@
 class FlashMan : public QObject {
 	Q_OBJECT
 public:
+    /********************************************************************//**
+     * Constructor
+     *
+     * \param[in] host Host name.
+     * \param[in] port Port number.
+     ************************************************************************/
+    FlashMan(const char *host, uint16_t port);
+
+    bool IsConnected(void);
+
 	/********************************************************************//**
 	 * Program a file to the flash chip.
 	 *
@@ -131,6 +141,10 @@ signals:
 	 * \param[in] value Position of the flash/read cursor.
 	 ************************************************************************/
 	void ValueChanged(int value);
+
+private:
+    /// Prohibit using the default constructor
+    FlashMan(void);
 };
 
 #endif /*_FLASH_MAN_H_*/

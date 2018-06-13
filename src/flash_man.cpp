@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "flash_man.h"
 #include "util.h"
+#include "wflash.h"
 
 uint16_t *FlashMan::Program(const char filename[], bool autoErase,
 		uint32_t *start, uint32_t *len) {

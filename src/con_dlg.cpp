@@ -1,11 +1,30 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLayout>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QMessageBox>
 
 #include "con_dlg.h"
 
-ConDialog::ConDialog(void) {
+ConDialog::ConDialog(QTcpSocket *socket) {
+    this->socket = socket;
 	InitUI();
+}
+
+void ConDialog::Connect(void) {
+    int nPort;
+    nPort = atoi(port->text().toStdString().c_str());
+    if ((nPort <= 0) || (nPort > UINT16_MAX)) {
+        
+		QMessageBox::warning(this, "Connection error", "Invalid port number");
+        return;
+    }
+    ConnectingDialog cDlg(socket, addr->text().toStdString().c_str(), nPort);
+    if (!cDlg.exec()) {
+		QMessageBox::warning(this, "Connection error", "Connection failed");
+        return;
+    }
+
+    accept();
 }
 
 void ConDialog::InitUI(void) {
@@ -19,7 +38,7 @@ void ConDialog::InitUI(void) {
     QPushButton *exitBtn = new QPushButton("EXIT");
 
 	connect(exitBtn, SIGNAL(clicked()), this, SLOT(reject()));
-	connect(connBtn, SIGNAL(clicked()), this, SLOT(accept()));
+	connect(connBtn, SIGNAL(clicked()), this, SLOT(Connect()));
 
 	QHBoxLayout *addrLayout = new QHBoxLayout;
     addrLayout->addWidget(addr);

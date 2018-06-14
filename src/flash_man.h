@@ -115,6 +115,36 @@ public:
 	 ************************************************************************/
 	uint16_t DevIdGet(uint16_t devIds[3]);
 
+	/********************************************************************//**
+	 * Reads a file, putting its contents into a newly allocated buffer.
+	 *
+	 * \param[in] path Path of the file to read.
+     * \param[in] addr Address offset to start reading the file.
+     * \param[in] len  Number of bytes to read. Set to 0 to read until end
+     *                 of file.
+	 *
+	 * \return Pointer to the newly allocated file, NULL on error.
+	 ************************************************************************/
+    uint8_t *AllocFile(const char *path, uint32_t addr, uint32_t len);
+
+	/********************************************************************//**
+	 * Writes a buffer into a file.
+	 *
+	 * \param[in] path Path of the file to write.
+     * \param[in] buf  Buffer to write to file.
+     * \param[in] len  Buffer length to write.
+	 *
+	 * \return 0 on success, non-zero on error.
+	 ************************************************************************/
+    int WriteFile(const char *path, const uint8_t *buf, uint32_t len);
+
+	/********************************************************************//**
+	 * Frees a buffer, previously allocated with AllocFile() method.
+	 *
+     * \param[in] buf  Buffer to free.
+	 ************************************************************************/
+    void FreeBuffer(uint8_t *buf) const;
+
 signals:
 	/********************************************************************//**
 	 * RangeChanged signal. It is emitted by the Flash() and Read() methods

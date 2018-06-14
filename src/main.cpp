@@ -584,29 +584,13 @@ int main( int argc, char **argv )
 #ifdef QT
 		QApplication app (argc, argv);
         QTcpSocket sck;
-        int port;
 
         {
-    		ConDialog cDlg;
+    		ConDialog cDlg(&sck);
     		if (!cDlg.exec()) {
                 return -1;
             }
-            port = atoi(cDlg.port->text().toStdString().c_str());
-            if ((port <= 0) || (port > UINT16_MAX)) {
-                printf("INVALID PORT\n");
-                return -1;
-            }
-            printf("Connect to %s:%d\n", cDlg.addr->text().toStdString().c_str(),
-                    port);
-            ConnectingDialog ciDlg(&sck, cDlg.addr->text().toStdString().c_str(),
-                    port);
-            if (!ciDlg.exec()) {
-                printf("CONNECTION FAILURE");
-                return -1;
-            }
-            printf("CONNECTED!\n");
         }
-
 
         FlashDialog fDlg;
         fDlg.show();

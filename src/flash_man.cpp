@@ -124,3 +124,14 @@ uint16_t FlashMan::DevIdGet(uint16_t devIds[3]) {
 	return 1;
 }
 
+uint8_t *FlashMan::AllocFile(const char *path, uint32_t addr, uint32_t len) {
+    return NULL;
+}
+
+int FlashMan::WriteFile(const char *path, const uint8_t *buf, uint32_t len) {
+}
+
+void FlashMan::FreeBuffer(uint8_t *buf) const {
+    if (buf) free(buf);
+}
+

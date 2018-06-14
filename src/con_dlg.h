@@ -18,13 +18,20 @@ public:
 	/********************************************************************//**
 	 * Default constructor.
 	 ************************************************************************/
-	ConDialog(void);
+	ConDialog(QTcpSocket *socket);
+    
+public slots:
+    void Connect(void);
+
 
 private:
+    ConDialog(void);
 	/********************************************************************//**
 	 * Initialize the dialog
 	 ************************************************************************/
 	void InitUI(void);
+
+    QTcpSocket *socket;
 };
 
 class ConnectingDialog : public QDialog {
@@ -37,6 +44,7 @@ public:
         ConnectingDialog(QTcpSocket *s, const char *addr, uint16_t port);
 
 private:
+        ConnectingDialog(void);
         void InitUI(void);
 };
 

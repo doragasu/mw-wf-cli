@@ -128,7 +128,6 @@ static inline int WfCmdSend(uint16_t cmd, uint16_t dataLen) {
 	return dataLen + WF_HEADLEN;
 }
 
-
 static inline int WfReplyRecv(int dataLen) {
 	int recvd;
 

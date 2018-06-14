@@ -25,6 +25,7 @@
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLayout>
+#include <QtNetwork/QtNetwork>
 
 /************************************************************************//**
  * Main dialog class
@@ -44,13 +45,17 @@ public:
 	/********************************************************************//**
 	 * Default constructor.
 	 ************************************************************************/
-	FlashDialog(void);
+	FlashDialog(QTcpSocket *socket);
 
 private:
 	/********************************************************************//**
 	 * Initialize the dialog with the tabs.
 	 ************************************************************************/
 	void InitUI(void);
+
+	FlashDialog(void);
+
+    QTcpSocket *socket;
 };
 
 /************************************************************************//**

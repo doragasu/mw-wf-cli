@@ -18,7 +18,9 @@
 #define _FLASH_MAN_H_
 
 #include <QObject>
+#include <QtNetwork/QtNetwork>
 #include <stdint.h>
+#include "cmds.h"
 
 /// Chip length in bytes
 #define FM_CHIP_LENGTH	0x400000
@@ -35,14 +37,14 @@ public:
      * \param[in] host Host name.
      * \param[in] port Port number.
      ************************************************************************/
-//    FlashMan(const char *host, uint16_t port);
+    FlashMan(QTcpSocket *socket);
 
     bool IsConnected(void);
 
 	/********************************************************************//**
 	 * Program a file to the flash chip.
 	 *
-	 * \param[in] filename  File name to program.
+	 * \param[in] buffer    Buffer to program to flash
 	 * \param[in] autoErase Erase the flash range where the file will be
 	 *            flashed.
 	 * \param[in] start     Word memory addressh where the file will be
@@ -55,8 +57,8 @@ public:
 	 * \warning The user is responsible of freeing the buffer calling
 	 * BufFree() when its contents are not needed anymore.
 	 ************************************************************************/
-	uint16_t *Program(const char filename[], bool autoErase,
-			uint32_t *start, uint32_t *len);
+	int Program(const uint8_t *buffer, bool autoErase,
+			uint32_t start, uint32_t len);
 
 	/********************************************************************//**
 	 * Read a memory range from the flash chip.
@@ -97,35 +99,28 @@ public:
 	 ************************************************************************/
 	void BufFree(uint16_t *buf);
 
-	/********************************************************************//**
-	 * Obtains the flash chip 16-bit Manufacturer ID code.
-	 *
-	 * \param[out] manId The 16-bit Manufacturer ID of the flash chip.
-	 *
-	 * \return 0 on success, non-zero on error.
-	 ************************************************************************/
-	uint16_t ManIdGet(uint16_t *manId);
+    int BootloaderVersionGet(uint8_t ver[2]);
+
 
 	/********************************************************************//**
-	 * Obtains the 3 flash chip 16-bit Device ID codes.
+	 * Obtains the flash chip manufacturer and device IDs
 	 *
-	 * \param[out] devIds The 3 16-bit Device IDs of the flash chip.
+	 * \param[out] ids The 4 8-bit Device IDs of the flash chip.
 	 *
 	 * \return 0 on success, non-zero on error.
 	 ************************************************************************/
-	uint16_t DevIdGet(uint16_t devIds[3]);
+	int IdsGet(uint8_t ids[4]);
 
 	/********************************************************************//**
 	 * Reads a file, putting its contents into a newly allocated buffer.
 	 *
 	 * \param[in] path Path of the file to read.
-     * \param[in] addr Address offset to start reading the file.
      * \param[in] len  Number of bytes to read. Set to 0 to read until end
      *                 of file.
 	 *
 	 * \return Pointer to the newly allocated file, NULL on error.
 	 ************************************************************************/
-    uint8_t *AllocFile(const char *path, uint32_t addr, uint32_t len);
+    uint8_t *AllocFile(const char *path, uint32_t *len);
 
 	/********************************************************************//**
 	 * Writes a buffer into a file.
@@ -174,7 +169,11 @@ signals:
 
 private:
     /// Prohibit using the default constructor
-//    FlashMan(void);
+    FlashMan(void);
+
+    QTcpSocket *socket;
+    int CmdSend(const WfCmd *buf);
+    int ReplyRecv(WfBuf *buf, int datalen);
 };
 
 #endif /*_FLASH_MAN_H_*/

@@ -57,7 +57,7 @@ void ConDialog::InitUI(void) {
 	setLayout(mainLayout);
 
 	setWindowTitle("Mega WiFi connection");
-    this->layout()->setSizeConstraint( QLayout::SetFixedSize );
+    this->layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
 
 ConnectingDialog::ConnectingDialog(QTcpSocket *s, const char *addr,
@@ -69,7 +69,10 @@ ConnectingDialog::ConnectingDialog(QTcpSocket *s, const char *addr,
     connect(sck, SIGNAL(disconnected()), this, SLOT(reject()));
 
     InitUI();
-
+    // Disable Nagle algorithm
+    /// \warning test effect on transfer speed
+    sck->setSocketOption(QAbstractSocket::LowDelayOption, 1);
+    // Connect
     sck->connectToHost(addr, port);
 }
 
@@ -81,6 +84,7 @@ void ConnectingDialog::InitUI(void) {
 	setLayout(mainLayout);
 
 	setWindowTitle("Mega WiFi connection");
-    this->layout()->setSizeConstraint( QLayout::SetFixedSize );
+    setFixedWidth(200);
+    setFixedHeight(60);
 }
 

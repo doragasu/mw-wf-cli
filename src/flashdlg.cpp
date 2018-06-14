@@ -391,7 +391,8 @@ void FlashWriteTab::Flash(void) {
 	disconnect(this, 0, 0, 0);
 }
 
-FlashDialog::FlashDialog(void) {
+FlashDialog::FlashDialog(QTcpSocket *socket) {
+    this->socket = socket;
 	InitUI();
 }
 

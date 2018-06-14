@@ -591,8 +591,9 @@ int main( int argc, char **argv )
                 return -1;
             }
         }
-
-        FlashDialog fDlg;
+    
+        // Connection succeeded, open main dialog
+        FlashDialog fDlg(&sck);
         fDlg.show();
 		return app.exec();
 #else

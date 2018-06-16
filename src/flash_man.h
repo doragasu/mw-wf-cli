@@ -61,20 +61,6 @@ public:
 			uint32_t start, uint32_t len);
 
 	/********************************************************************//**
-	 * Read a memory range from the flash chip.
-	 *
-	 * \param[in] start Word memory address to start reading from.
-	 * \param[in] len   Number of words to read from flash.
-	 *
-	 * \return A pointer to the buffer containing the data read from the
-	 * flash, or NULL if the read operation has failed.
-	 *
-	 * \warning The user is responsible of freeing the buffer calling
-	 * BufFree() when its contents are not needed anymore.
-	 ************************************************************************/
-	uint8_t *Read(uint32_t start, uint32_t len);
-
-	/********************************************************************//**
 	 * Erases a memory range from the flash chip.
 	 *
 	 * \param[in] start Word memory address of the beginning of the range
@@ -93,6 +79,8 @@ public:
 	void BufFree(uint8_t *buf);
 
     int BootloaderVersionGet(uint8_t ver[2]);
+
+    int Boot(void);
 
 
 	/********************************************************************//**
@@ -172,7 +160,6 @@ private:
     int CmdSend(const WfCmd *buf);
     int ReplyRecv(WfBuf *buf, int datalen);
     int ProgramCmd(uint32_t addr, uint32_t len);
-    int ReadCmd(uint32_t addr, uint32_t len);
     void ByteSwapBuf(uint8_t *buf, uint32_t len);
 };
 

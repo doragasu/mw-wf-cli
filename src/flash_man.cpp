@@ -37,7 +37,6 @@ int FlashMan::ReplyRecv(WfBuf *buf, int dataLen) {
 
     socket->waitForReadyRead(-1);
 	recvd = socket->read((char*)buf, WF_HEADLEN + dataLen);
-    printf("recvd %d\n", recvd);
 	if ((recvd != (WF_HEADLEN + dataLen)) || (buf->cmd.cmd != WF_OK) ||
 			(buf->cmd.len != dataLen)) {
         socket->close();
@@ -55,26 +54,6 @@ int FlashMan::ProgramCmd(uint32_t addr, uint32_t len) {
     buf.cmd.len = 8;
     buf.cmd.mem.addr = addr;
     buf.cmd.mem.len  = len;
-
-    if (CmdSend(&buf.cmd) < 0) {
-        return 1;
-    }
-
-    if (ReplyRecv(&buf, 0) < 0) {
-        return 1;
-    }
-
-    return 0;
-}
-
-/// \note Does only send command, does not read data
-int FlashMan::ReadCmd(uint32_t addr, uint32_t len) {
-    WfBuf buf;
-
-    buf.cmd.cmd = WF_CMD_READ;
-    buf.cmd.len = 8;
-    buf.cmd.mem.addr = addr;
-    buf.cmd.mem.len = len;
 
     if (CmdSend(&buf.cmd) < 0) {
         return 1;
@@ -133,53 +112,6 @@ int FlashMan::Program(const uint8_t *data, bool autoErase,
 	return 0;
 }
 
-uint8_t *FlashMan::Read(uint32_t start, uint32_t len) {
-	uint8_t *readBuf;
-	int toRead;
-	uint32_t addr;
-	uint32_t i;
-    size_t readed;
-
-	emit RangeChanged(0, len);
-	emit ValueChanged(0);
-	emit StatusChanged("Reading");
-	QApplication::processEvents();
-
-    printf("start: %u, length: %u\n", start, len);
-    puts("ALLOC");
-	readBuf = (uint8_t*)malloc(len);
-	if (!readBuf) {
-		return NULL;
-	}
-
-    puts("CMD");
-    if (ReadCmd(start, len)) {
-        return NULL;
-    }
-
-    puts("LOOP");
-    // Command accepted, read payload
-	for (i = 0, addr = start; i < len;) {
-		toRead = MIN(WF_MAX_DATALEN, len - i);
-        socket->waitForReadyRead(-1);
-        readed = socket->read((char*)(readBuf + i), toRead);
-        printf("payload %lu\n", readed);
-		if (readed <= 0) {
-            QMessageBox::warning(NULL, "Connection error", "Failed to read bytes");
-			return NULL;
-		}
-		// Update vars and draw progress bar
-		i += toRead;
-		addr += toRead;
-		emit ValueChanged(i);
-		QApplication::processEvents();
-	}
-	emit ValueChanged(i);
-	emit StatusChanged("Done");
-	QApplication::processEvents();
-	return readBuf;
-}
-
 int FlashMan::RangeErase(uint32_t start, uint32_t len) {
     WfBuf buf;
 
@@ -218,6 +150,23 @@ int FlashMan::BootloaderVersionGet(uint8_t ver[2]) {
     }
 
 	return 0;
+}
+
+int FlashMan::Boot(void) {
+    WfBuf buf;
+
+    buf.cmd.cmd = WF_CMD_AUTORUN;
+    buf.cmd.len = 0;
+
+    if (CmdSend(&buf.cmd) < 0) {
+        return 1;
+    }
+
+    if (ReplyRecv(&buf, 0) < 0) {
+        return 1;
+    }
+
+    return 0;
 }
 
 int FlashMan::IdsGet(uint8_t ids[4]) {

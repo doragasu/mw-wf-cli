@@ -17,7 +17,7 @@ FlashInfoTab::FlashInfoTab(FlashDialog *dlg) {
 }
 
 void FlashInfoTab::InitUI(void) {
-	QLabel *mdmaVerCaption = new QLabel("MDMA Version:");
+	QLabel *mdmaVerCaption = new QLabel("Programmer Version:");
 	QLabel *mdmaVer = new QLabel(QString::asprintf("%d.%d", VERSION_MAJOR,
 				VERSION_MINOR));
 	mdmaVer->setFrameStyle(QFrame::Panel | QFrame::Sunken);
@@ -30,7 +30,7 @@ void FlashInfoTab::InitUI(void) {
 	QLabel *devIdCaption = new QLabel("Flash device IDs:");
 	devId = new QLabel("N/A");
 	devId->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-	QLabel *about = new QLabel("Megadrive Wireless Flash, "
+	QLabel *about = new QLabel("Megadrive WiFi Programmer, "
 			"by doragasu, 2018");
 
 	// Connect signals and slots
@@ -63,7 +63,7 @@ void FlashInfoTab::TabChange(int index) {
     uint8_t ver[2];
 
 	// If tab is the info tab, update fields
-	if (index != 3) return;
+	if (index != 2) return;
 	
 	FlashMan fm(dlg->socket);
 	err = fm.IdsGet(id);
@@ -152,117 +152,19 @@ void FlashEraseTab::Erase(void) {
 }
 
 
-FlashReadTab::FlashReadTab(FlashDialog *dlg) {
-	this->dlg = dlg;
-	InitUI();
-}
-
-void FlashReadTab::InitUI(void) {
-	// Create widgets
-	QLabel *romLab = new QLabel("Read from cart to ROM:");	
-	fileLe = new QLineEdit;
-	QPushButton *fOpenBtn = new QPushButton("...");
-	fOpenBtn->setFixedWidth(30);
-	QLabel *rangeLb = new QLabel("Range to read (bytes):");
-	QLabel *startLb = new QLabel("Start: ");
-	startLe = new QLineEdit("0x000000");
-	QLabel *lengthLb = new QLabel("Length: ");
-	lengthLe = new QLineEdit(QString::asprintf("0x%06X", FM_CHIP_LENGTH));
-	QPushButton *readBtn = new QPushButton("Read!");
-
-	// Connect signals to slots
-	connect(fOpenBtn, SIGNAL(clicked()), this, SLOT(ShowFileDialog()));
-	connect(readBtn, SIGNAL(clicked()), this, SLOT(Read()));
-
-	// Configure layout
-	QHBoxLayout *fileLayout = new QHBoxLayout;
-	fileLayout->addWidget(fileLe);
-	fileLayout->addWidget(fOpenBtn);
-
-	QHBoxLayout *rangeLayout = new QHBoxLayout;
-	rangeLayout->addWidget(startLb);
-	rangeLayout->addWidget(startLe);
-	rangeLayout->addWidget(lengthLb);
-	rangeLayout->addWidget(lengthLe);
-
-	QHBoxLayout *statLayout = new QHBoxLayout;
-	statLayout->addWidget(readBtn);
-	statLayout->setAlignment(Qt::AlignRight);
-
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addWidget(romLab);
-	mainLayout->addLayout(fileLayout);
-	mainLayout->addWidget(rangeLb);
-	mainLayout->addLayout(rangeLayout);
-	mainLayout->addStretch(1);
-	mainLayout->addLayout(statLayout);
-
-	setLayout(mainLayout);
-}
-
-void FlashReadTab::ShowFileDialog(void) {
-	QString fileName;
-
-	fileName = QFileDialog::getSaveFileName(this, tr("Write to ROM file"),
-			NULL, tr("ROM Files (*.bin);;All files (*)"));
-	if (!fileName.isEmpty()) fileLe->setText(fileName);
-}
-
-void FlashReadTab::Read(void) {
-	uint8_t *rdBuf = NULL;
-	int start, len;
-	bool ok;
-
-	if (fileLe->text().isEmpty()) {
-		QMessageBox::warning(this, "MDMA", "No file selected!");
-		return;
-	}
-	start = startLe->text().toInt(&ok, 0);
-	if (ok) len = lengthLe->text().toInt(&ok, 0);
-	if (!ok || ((start + len) > FM_CHIP_LENGTH)) {
-		QMessageBox::warning(this, "MDMA", "Invalid read range!");
-		return;
-	}
-	dlg->tabs->setDisabled(true);
-	dlg->btnQuit->setVisible(false);
-	dlg->progBar->setVisible(true);
-	// Create Flash Manager and connect signals to UI control slots
-	FlashMan fm(dlg->socket);
-	connect(&fm, &FlashMan::RangeChanged, dlg->progBar,
-			&QProgressBar::setRange);
-	connect(&fm, &FlashMan::ValueChanged, dlg->progBar,
-			&QProgressBar::setValue);
-	connect(&fm, &FlashMan::StatusChanged, dlg->statusLab, &QLabel::setText);
-
-	// Start reading
-	rdBuf = fm.Read(start, len);
-	if (!rdBuf) {
-		QMessageBox::warning(this, "Read failed",
-				"Cannot read from cart!");
-	}
-	// Cart readed, write to file
-	if (rdBuf) {
-		FILE *f;
-		if (!(f = fopen(fileLe->text().toStdString().c_str(), "wb")))
-			QMessageBox::warning(this, "ERROR", "Could not open file!");
-		else {
-	        if (fwrite(rdBuf, len, 1, f) <= 0)
-				QMessageBox::warning(this, "ERROR", "Could write to file!");
-	        fclose(f);
-		}
-	}
-	// Cleanup
-	if (rdBuf) fm.BufFree(rdBuf);
-	dlg->progBar->setVisible(false);
-	dlg->btnQuit->setVisible(true);
-	dlg->tabs->setDisabled(false);
-	dlg->statusLab->setText("Done!");
-	disconnect(this, 0, 0, 0);
-}
-
 FlashWriteTab::FlashWriteTab(FlashDialog *dlg) {
 	this->dlg = dlg;
 	InitUI();
+}
+
+void FlashWriteTab::Boot(void) {
+	FlashMan fm(dlg->socket);
+
+    if (fm.Boot()) {
+        QMessageBox::warning(this, "ERROR", "Boot failed!");
+        return;
+    }
+    exit(0);
 }
 
 void FlashWriteTab::InitUI(void) {
@@ -273,13 +175,15 @@ void FlashWriteTab::InitUI(void) {
 	fOpenBtn->setFixedWidth(30);
 	autoCb = new QCheckBox("Auto-erase");
 	autoCb->setCheckState(Qt::Checked);
-	verifyCb = new QCheckBox("Verify");
-	verifyCb->setCheckState(Qt::Unchecked);
+	autoBootCb = new QCheckBox("Auto-boot and close after flash");
+	autoBootCb->setCheckState(Qt::Checked);
+	QPushButton *bootBtn = new QPushButton("Boot and close!");
 	QPushButton *flashBtn = new QPushButton("Flash!");
 
 	// Connect signals to slots
 	connect(fOpenBtn, SIGNAL(clicked()), this, SLOT(ShowFileDialog()));
 	connect(flashBtn, SIGNAL(clicked()), this, SLOT(Flash()));
+	connect(bootBtn, SIGNAL(clicked()), this, SLOT(Boot()));
 
 	// Configure layout
 	QHBoxLayout *fileLayout = new QHBoxLayout;
@@ -287,6 +191,7 @@ void FlashWriteTab::InitUI(void) {
 	fileLayout->addWidget(fOpenBtn);
 
 	QHBoxLayout *statLayout = new QHBoxLayout;
+	statLayout->addWidget(bootBtn);
 	statLayout->addWidget(flashBtn);
 	statLayout->setAlignment(Qt::AlignRight);
 
@@ -294,7 +199,7 @@ void FlashWriteTab::InitUI(void) {
 	mainLayout->addWidget(romLab);
 	mainLayout->addLayout(fileLayout);
 	mainLayout->addWidget(autoCb);
-	mainLayout->addWidget(verifyCb);
+	mainLayout->addWidget(autoBootCb);
 	mainLayout->addStretch(1);
 	mainLayout->addLayout(statLayout);
 
@@ -311,7 +216,6 @@ void FlashWriteTab::ShowFileDialog(void) {
 
 void FlashWriteTab::Flash(void) {
 	uint8_t *wrBuf = NULL;
-	uint8_t *rdBuf = NULL;
 	uint32_t start = 0;
 	uint32_t len = 0;
 	bool autoErase;
@@ -348,36 +252,16 @@ void FlashWriteTab::Flash(void) {
 		disconnect(this, 0, 0, 0);
 		return;
 	}
-	// If verify requested, do it!
-	if (verifyCb->isChecked()) {
-		rdBuf = fm.Read(start, len);
-		if (!rdBuf) {
-			fm.BufFree(wrBuf);
-			QMessageBox::warning(this, "Verify failed",
-					"Cannot allocate buffer!");
-			dlg->progBar->setVisible(false);
-			dlg->btnQuit->setVisible(true);
-			dlg->tabs->setDisabled(false);
-			dlg->statusLab->setText("Done!");
-			return;
-		}
-		for (uint32_t i = 0; i < len; i++) {
-			if (wrBuf[i] != rdBuf[i]) {
-				QString str;
-				str.sprintf("Verify failed at pos: 0x%X!", i);
-				QMessageBox::warning(this, "Verify failed", str);
-				break;
-			}
-		}
-		dlg->statusLab->setText("Verify OK!");
-	} else {
-		dlg->statusLab->setText("Program OK!");
-	} if (wrBuf) fm.BufFree(wrBuf);
-	if (rdBuf) fm.BufFree(rdBuf);
+
+    fm.BufFree(wrBuf);
 	dlg->progBar->setVisible(false);
 	dlg->btnQuit->setVisible(true);
 	dlg->tabs->setDisabled(false);
 	disconnect(this, 0, 0, 0);
+
+    if (autoBootCb->isChecked()) {
+        Boot();
+    }
 }
 
 FlashDialog::FlashDialog(QTcpSocket *socket) {
@@ -388,7 +272,6 @@ FlashDialog::FlashDialog(QTcpSocket *socket) {
 void FlashDialog::InitUI(void) {
 	tabs = new QTabWidget;
 	tabs->addTab(new FlashWriteTab(this), tr("WRITE"));
-	tabs->addTab(new FlashReadTab(this),  tr("READ"));
 	tabs->addTab(new FlashEraseTab(this), tr("ERASE"));
 	tabs->addTab(new FlashInfoTab(this),  tr("INFO"));
 
@@ -413,6 +296,6 @@ void FlashDialog::InitUI(void) {
 	setLayout(mainLayout);
 
 	resize(350, 300);
-	setWindowTitle("MegaDrive Memory Administration");
+	setWindowTitle("Megadrive WiFi Programmer");
 }
 

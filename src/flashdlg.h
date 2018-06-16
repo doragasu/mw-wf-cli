@@ -142,51 +142,6 @@ private:
 };
 
 /************************************************************************//**
- * Widget class handling the READ tab
- ****************************************************************************/
-class FlashReadTab : public QWidget {
-	Q_OBJECT
-public:
-	/********************************************************************//**
-	 * Constructor
-	 *
-	 * \param[in] pointer to the owner of this class
-	 ************************************************************************/
-	FlashReadTab(FlashDialog *dlg);
-
-public slots:
-	/********************************************************************//**
-	 * Reads a segment of the flash chip, depending on dialog data
-	 ************************************************************************/
-	void Read(void);
-
-	/********************************************************************//**
-	 * Opens a file dialog, for the user to select the file to write to.
-	 ************************************************************************/
-	void ShowFileDialog(void);
-
-private:
-	/// Parent dialog
-	FlashDialog *dlg;
-	/// File to read
-	QLineEdit *fileLe;
-	/// Cartridge address to start reading
-	QLineEdit *startLe;
-	/// Read length
-	QLineEdit *lengthLe;
-
-	/********************************************************************//**
-	 * Initialize the tab interface
-	 ************************************************************************/
-	void InitUI(void);
-
-	/********************************************************************//**
-	 * Do not allow using default constructor
-	 ************************************************************************/
-	FlashReadTab(void);
-};
-
-/************************************************************************//**
  * Widget class handling the WRITE tab
  ****************************************************************************/
 class FlashWriteTab : public QWidget {
@@ -210,6 +165,8 @@ public slots:
 	 ************************************************************************/
 	void ShowFileDialog(void);
 
+    void Boot(void);
+
 private:
 	/// Parent dialog
 	FlashDialog *dlg;
@@ -217,8 +174,8 @@ private:
 	QLineEdit *fileLe;
 	/// Auto-erase checkbox
 	QCheckBox *autoCb;
-	/// Verify checkbox
-	QCheckBox *verifyCb;
+	/// Auto-boot checkbox
+	QCheckBox *autoBootCb;
 
 	/********************************************************************//**
 	 * Initialize the tab interface

@@ -124,9 +124,6 @@ const static char defIp[] = "192.168.1.60";
 /// Default port of the MegaWiFi cartridge.
 const static uint16_t defPort = 1989;
 
-/// 16-bit byte swap macro
-#define ByteSwapWord(word)	do{(word) = ((word)>>8) | ((word)<<8);}while(0)
-
 /************************************************************************//**
  * Print program version number.
  *

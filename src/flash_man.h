@@ -72,7 +72,7 @@ public:
 	 * \warning The user is responsible of freeing the buffer calling
 	 * BufFree() when its contents are not needed anymore.
 	 ************************************************************************/
-	uint16_t *Read(uint32_t start, uint32_t len);
+	uint8_t *Read(uint32_t start, uint32_t len);
 
 	/********************************************************************//**
 	 * Erases a memory range from the flash chip.
@@ -86,18 +86,11 @@ public:
 	int RangeErase(uint32_t start, uint32_t len);
 
 	/********************************************************************//**
-	 * Issues a complete chip erase command to the flash chip.
-	 *
-	 * \return 0 on success, non-zero if erase operation fails.
-	 ************************************************************************/
-	int FullErase(void);
-
-	/********************************************************************//**
 	 * Frees a buffer previously allocated by Program() or Read().
 	 *
 	 * \param[in] buf The address of the buffer to free.
 	 ************************************************************************/
-	void BufFree(uint16_t *buf);
+	void BufFree(uint8_t *buf);
 
     int BootloaderVersionGet(uint8_t ver[2]);
 
@@ -113,6 +106,7 @@ public:
 
 	/********************************************************************//**
 	 * Reads a file, putting its contents into a newly allocated buffer.
+     * Returned buffer is byte swapped.
 	 *
 	 * \param[in] path Path of the file to read.
      * \param[in] len  Number of bytes to read. Set to 0 to read until end
@@ -130,8 +124,11 @@ public:
      * \param[in] len  Buffer length to write.
 	 *
 	 * \return 0 on success, non-zero on error.
+     *
+     * \warning This function byte swaps the buffer before writing, and thus
+     * its contents are altered before the function returns.
 	 ************************************************************************/
-    int WriteFile(const char *path, const uint8_t *buf, uint32_t len);
+    int WriteFile(const char *path, uint8_t *buf, uint32_t len);
 
 	/********************************************************************//**
 	 * Frees a buffer, previously allocated with AllocFile() method.
@@ -174,6 +171,9 @@ private:
     QTcpSocket *socket;
     int CmdSend(const WfCmd *buf);
     int ReplyRecv(WfBuf *buf, int datalen);
+    int ProgramCmd(uint32_t addr, uint32_t len);
+    int ReadCmd(uint32_t addr, uint32_t len);
+    void ByteSwapBuf(uint8_t *buf, uint32_t len);
 };
 
 #endif /*_FLASH_MAN_H_*/

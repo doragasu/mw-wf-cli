@@ -46,6 +46,9 @@
 #define DelayMs(ms) usleep((ms)*1000)
 #endif
 
+/// 16-bit byte swap macro
+#define ByteSwapWord(word)	do{(word) = ((word)>>8) | ((word)<<8);}while(0)
+
 #endif //_UTIL_H_
 
 /** \} */

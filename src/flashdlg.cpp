@@ -59,22 +59,26 @@ void FlashInfoTab::InitUI(void) {
 
 void FlashInfoTab::TabChange(int index) {
 	uint16_t err;
-	uint16_t manId;
-	uint16_t devId[3];
-	FlashMan fm;
+	uint8_t id[4];
+    uint8_t ver[2];
 
 	// If tab is the info tab, update fields
 	if (index != 3) return;
 	
-	err = fm.ManIdGet(&manId);
-	err |= fm.DevIdGet(devId);
-
+	FlashMan fm(dlg->socket);
+	err = fm.IdsGet(id);
 	if (err) QMessageBox::warning(this, "Error", "Could not get IDs!");
 	else {
-		this->manId->setText(QString::asprintf("%04X", manId));
-		this->devId->setText(QString::asprintf("%04X:%04X:%04X", devId[0],
-				devId[1], devId[2]));
+		manId->setText(QString::asprintf("%02X", id[0]));
+		devId->setText(QString::asprintf("%02X:%02X:%02X", id[1],
+				id[2], id[3]));
 	}
+    err = fm.BootloaderVersionGet(ver);
+	if (err) QMessageBox::warning(this, "Error", "Could not get IDs!");
+    else {
+        progVer->setText(QString::asprintf("%d.%d", ver[0], ver[1]));
+    }
+
 }
 
 FlashEraseTab::FlashEraseTab(FlashDialog *dlg) {
@@ -85,7 +89,6 @@ FlashEraseTab::FlashEraseTab(FlashDialog *dlg) {
 
 void FlashEraseTab::InitUI(void) {
 	// Create widgets
-	fullCb = new QCheckBox("Full erase");
 	QLabel *rangeLb = new QLabel("Range to erase (bytes):");
 	QLabel *startLb = new QLabel("Start: ");
 	startLe = new QLineEdit("0x000000");
@@ -95,7 +98,6 @@ void FlashEraseTab::InitUI(void) {
 	
 	// Connect signals and slots
 	connect(eraseBtn, SIGNAL(clicked()), this, SLOT(Erase()));
-	connect(fullCb, SIGNAL(stateChanged(int)), this, SLOT(ToggleFull(int)));
 
 	// Set layout
 	QHBoxLayout *rangeLayout = new QHBoxLayout;
@@ -115,7 +117,6 @@ void FlashEraseTab::InitUI(void) {
 	statLayout->setAlignment(Qt::AlignRight);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addWidget(fullCb);
 	mainLayout->addWidget(rangeFrame);
 	mainLayout->addStretch(1);
 	mainLayout->addLayout(statLayout);
@@ -123,36 +124,26 @@ void FlashEraseTab::InitUI(void) {
 	setLayout(mainLayout);
 }
 
-void FlashEraseTab::ToggleFull(int state) {
-	if (Qt::Checked == state) rangeFrame->hide();
-	else rangeFrame->show();
-}
-
 void FlashEraseTab::Erase(void) {
 	int start, len;
 	int status;
 	bool ok;
-	FlashMan fm;
+	FlashMan fm(dlg->socket);
 
 	dlg->tabs->setEnabled(false);
 	dlg->btnQuit->setVisible(false);
 
-	if (fullCb->isChecked()) {
-		dlg->statusLab->setText("Erasing...");
-		dlg->repaint();
-		status = fm.FullErase();
-	} else {
-		start = startLe->text().toInt(&ok, 0);
-		if (ok) len = lengthLe->text().toInt(&ok, 0);
-		if (!ok || ((start + len) > FM_CHIP_LENGTH)) {
-			QMessageBox::warning(this, "MDMA", "Invalid erase range!");
-			return;
-		}
-		dlg->statusLab->setText("Erasing...");
-		dlg->repaint();
-		// Partial erase, with word based range
-		status = fm.RangeErase(start>>1, len>>1);
+	start = startLe->text().toInt(&ok, 0);
+	if (ok) len = lengthLe->text().toInt(&ok, 0);
+	if (!ok || ((start + len) > FM_CHIP_LENGTH)) {
+		QMessageBox::warning(this, "MDMA", "Invalid erase range!");
+		return;
 	}
+	dlg->statusLab->setText("Erasing...");
+	dlg->repaint();
+	// Partial erase, with word based range
+	status = fm.RangeErase(start, len);
+
 	if (status) QMessageBox::warning(this, "Error", "Erase failed!");
 
 	dlg->tabs->setEnabled(true);
@@ -218,7 +209,7 @@ void FlashReadTab::ShowFileDialog(void) {
 }
 
 void FlashReadTab::Read(void) {
-	uint16_t *rdBuf = NULL;
+	uint8_t *rdBuf = NULL;
 	int start, len;
 	bool ok;
 
@@ -236,21 +227,18 @@ void FlashReadTab::Read(void) {
 	dlg->btnQuit->setVisible(false);
 	dlg->progBar->setVisible(true);
 	// Create Flash Manager and connect signals to UI control slots
-	FlashMan fm;
+	FlashMan fm(dlg->socket);
 	connect(&fm, &FlashMan::RangeChanged, dlg->progBar,
 			&QProgressBar::setRange);
 	connect(&fm, &FlashMan::ValueChanged, dlg->progBar,
 			&QProgressBar::setValue);
 	connect(&fm, &FlashMan::StatusChanged, dlg->statusLab, &QLabel::setText);
 
-	// Convert to word addresses
-	start >>=1;
-	len = (len>>1) + (len & 1);
 	// Start reading
 	rdBuf = fm.Read(start, len);
 	if (!rdBuf) {
 		QMessageBox::warning(this, "Read failed",
-				"Cannot allocate buffer!");
+				"Cannot read from cart!");
 	}
 	// Cart readed, write to file
 	if (rdBuf) {
@@ -258,7 +246,7 @@ void FlashReadTab::Read(void) {
 		if (!(f = fopen(fileLe->text().toStdString().c_str(), "wb")))
 			QMessageBox::warning(this, "ERROR", "Could not open file!");
 		else {
-	        if (fwrite(rdBuf, len<<1, 1, f) <= 0)
+	        if (fwrite(rdBuf, len, 1, f) <= 0)
 				QMessageBox::warning(this, "ERROR", "Could write to file!");
 	        fclose(f);
 		}
@@ -322,18 +310,27 @@ void FlashWriteTab::ShowFileDialog(void) {
 }
 
 void FlashWriteTab::Flash(void) {
-	uint16_t *wrBuf = NULL;
-	uint16_t *rdBuf = NULL;
+	uint8_t *wrBuf = NULL;
+	uint8_t *rdBuf = NULL;
 	uint32_t start = 0;
 	uint32_t len = 0;
 	bool autoErase;
 
 	if (fileLe->text().isEmpty()) return;
+
+    // Read file
+	FlashMan fm(dlg->socket);
+    wrBuf = fm.AllocFile(fileLe->text().toStdString().c_str(), &len);
+    if (!wrBuf) {
+        QMessageBox::warning(this, "Flash error", "Reading file failed!");
+        return ;
+    }
+
+
 	dlg->tabs->setDisabled(true);
 	dlg->btnQuit->setVisible(false);
 	dlg->progBar->setVisible(true);
 	// Create Flash Manager and connect signals to UI control slots
-	FlashMan fm;
 	connect(&fm, &FlashMan::RangeChanged, dlg->progBar,
 			&QProgressBar::setRange);
 	connect(&fm, &FlashMan::ValueChanged, dlg->progBar,
@@ -341,17 +338,9 @@ void FlashWriteTab::Flash(void) {
 	connect(&fm, &FlashMan::StatusChanged, dlg->statusLab, &QLabel::setText);
 
 	autoErase = autoCb->isChecked();
-	// Should not be necessary doing this, but QT does not refresh dialog
-	// unless forced with the repaint()
-	if (autoErase) dlg->statusLab->setText("Auto erasing");
-	dlg->repaint();
 	// Start programming
-	wrBuf = fm.Program(fileLe->text().toStdString().c_str(),
-			autoErase, &start, &len);
-	if (!wrBuf) {
-		/// \todo show msg box with error and return
-		QMessageBox::warning(this, "Program failed",
-				"Cannot program file!");
+	if (fm.Program(wrBuf, autoErase, start, len)) {
+        fm.BufFree(wrBuf);
 		dlg->progBar->setVisible(false);
 		dlg->btnQuit->setVisible(true);
 		dlg->tabs->setDisabled(false);

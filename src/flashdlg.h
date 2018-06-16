@@ -41,6 +41,8 @@ public:
 	QProgressBar *progBar;
 	/// Pointer to exit button
 	QPushButton *btnQuit;
+    /// Connected socket
+    QTcpSocket *socket;
 
 	/********************************************************************//**
 	 * Default constructor.
@@ -54,8 +56,6 @@ private:
 	void InitUI(void);
 
 	FlashDialog(void);
-
-    QTcpSocket *socket;
 };
 
 /************************************************************************//**
@@ -120,14 +120,6 @@ public slots:
 	 ************************************************************************/
 	void Erase(void);
 
-	/********************************************************************//**
-	 * Hides the erase memory range input, depending on the check status of
-	 * the fullCb checkbox.
-	 *
-	 * \param[in] state Checked state of the fullCb checkbox.
-	 ************************************************************************/
-	void ToggleFull(int state);
-
 private:
 	/// Parent dialog
 	FlashDialog *dlg;
@@ -135,8 +127,6 @@ private:
 	QLineEdit *startLe;
 	/// Length of the erase range
 	QLineEdit *lengthLe;
-	/// Full erase checkbox
-	QCheckBox *fullCb;
 	/// Widget holding the frame range controls
 	QWidget *rangeFrame;
 

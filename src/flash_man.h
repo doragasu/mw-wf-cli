@@ -91,6 +91,8 @@ public:
 	 * \return 0 on success, non-zero on error.
 	 ************************************************************************/
 	int IdsGet(uint8_t ids[4]);
+    
+    int BootloaderAddrGet(uint32_t *addr);
 
 	/********************************************************************//**
 	 * Reads a file, putting its contents into a newly allocated buffer.

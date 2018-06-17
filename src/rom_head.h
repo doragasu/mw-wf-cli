@@ -20,6 +20,9 @@
 /// Lengh of the complete header (including vectors) in bytes
 #define ROM_HEAD_LEN	512
 
+/// Default entry point (for 32 MBit ROMs with 32 KiB header)
+#define ROM_HEAD_ENTRY_POINT    0x3F8000
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,7 +33,7 @@ extern "C" {
  *
  * \param[inout] head Pointer to the ROM, including the complete header
  ****************************************************************************/
-void RomHeadPatch(uint8_t *head);
+void RomHeadPatch(uint8_t *head, uint32_t entryPoint);
 
 #ifdef __cplusplus
 }

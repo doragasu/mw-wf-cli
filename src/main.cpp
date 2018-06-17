@@ -344,7 +344,8 @@ uint16_t *AllocAndFlash(MemImage *fWr, int autoErase, int noPatch,
 	}
 
 	// If header is included in flash image, and unless prohibited
-	if (!fWr->addr && !noPatch) RomHeadPatch((uint8_t*)writeBuf);
+	if (!fWr->addr && !noPatch) RomHeadPatch((uint8_t*)writeBuf,
+            ROM_HEAD_ENTRY_POINT);
 
    	printf("Flashing ROM %s starting at 0x%06X...\n", fWr->file, fWr->addr);
 

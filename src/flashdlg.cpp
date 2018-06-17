@@ -9,6 +9,7 @@
 #include "flash_man.h"
 #include "util.h"
 #include "version.h"
+#include "rom_head.h"
 
 
 FlashInfoTab::FlashInfoTab(FlashDialog *dlg) {
@@ -22,20 +23,18 @@ void FlashInfoTab::InitUI(void) {
 				VERSION_MINOR));
 	mdmaVer->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	QLabel *progVerCapion = new QLabel("Bootloader version:");
-	progVer = new QLabel("N/A");
+	QLabel *progVer = new QLabel(QString::asprintf("%d.%d", dlg->fwVer[0],
+                dlg->fwVer[1]));
 	progVer->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	QLabel *manIdCaption = new QLabel("Flash manufacturer ID:");
-	manId = new QLabel("N/A");
+	QLabel *manId = new QLabel(QString::asprintf("%02X", dlg->id[0]));
 	manId->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	QLabel *devIdCaption = new QLabel("Flash device IDs:");
-	devId = new QLabel("N/A");
+	QLabel *devId = new QLabel(QString::asprintf("%02X:%02X:%02X", dlg->id[1],
+				dlg->id[2], dlg->id[3]));
 	devId->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	QLabel *about = new QLabel("Megadrive WiFi Programmer, "
 			"by doragasu, 2018");
-
-	// Connect signals and slots
-	connect(dlg->tabs, SIGNAL(currentChanged(int)), this,
-			SLOT(TabChange(int)));
 
 	// Set layout
 	QHBoxLayout *aboutLayout = new QHBoxLayout;
@@ -55,30 +54,6 @@ void FlashInfoTab::InitUI(void) {
 	mainLayout->setAlignment(Qt::AlignTop);
 
 	setLayout(mainLayout);
-}
-
-void FlashInfoTab::TabChange(int index) {
-	uint16_t err;
-	uint8_t id[4];
-    uint8_t ver[2];
-
-	// If tab is the info tab, update fields
-	if (index != 2) return;
-	
-	FlashMan fm(dlg->socket);
-	err = fm.IdsGet(id);
-	if (err) QMessageBox::warning(this, "Error", "Could not get IDs!");
-	else {
-		manId->setText(QString::asprintf("%02X", id[0]));
-		devId->setText(QString::asprintf("%02X:%02X:%02X", id[1],
-				id[2], id[3]));
-	}
-    err = fm.BootloaderVersionGet(ver);
-	if (err) QMessageBox::warning(this, "Error", "Could not get IDs!");
-    else {
-        progVer->setText(QString::asprintf("%d.%d", ver[0], ver[1]));
-    }
-
 }
 
 FlashEraseTab::FlashEraseTab(FlashDialog *dlg) {
@@ -220,9 +195,16 @@ void FlashWriteTab::Flash(void) {
 	uint32_t len = 0;
 	bool autoErase;
 
-	if (fileLe->text().isEmpty()) return;
+    // If no file selected, pop up the file selection dialog and check again
+    // to see if user has selected a file
+	if (fileLe->text().isEmpty()) {
+        ShowFileDialog();
+        if (fileLe->text().isEmpty()) {
+            return;
+        }
+    }
 
-    // Read file
+    // Read file from disk
 	FlashMan fm(dlg->socket);
     wrBuf = fm.AllocFile(fileLe->text().toStdString().c_str(), &len);
     if (!wrBuf) {
@@ -230,6 +212,19 @@ void FlashWriteTab::Flash(void) {
         return ;
     }
 
+    if (len > dlg->bootAddr) {
+        // Too big file, requires wiping loader. Ask user
+        if (QMessageBox::warning(this, "Too big rom",
+                "Flashing this ROM requires wiping the bootloader.\n"
+                "If you continue, bootloader will not start anymore.\n\n"
+                "Wipe bootloader?", QMessageBox::Ok | QMessageBox::Cancel) ==
+                QMessageBox::Cancel) {
+            return;
+        }
+    } else {
+        // Patch header entry point
+        RomHeadPatch(wrBuf, dlg->bootAddr);
+    }
 
 	dlg->tabs->setDisabled(true);
 	dlg->btnQuit->setVisible(false);
@@ -266,6 +261,14 @@ void FlashWriteTab::Flash(void) {
 
 FlashDialog::FlashDialog(QTcpSocket *socket) {
     this->socket = socket;
+    memset(id, 0, sizeof(id));
+    memset(fwVer, 0, sizeof(fwVer));
+    bootAddr = 0;
+
+    FlashMan fm(socket);
+    fm.IdsGet(id);
+    fm.BootloaderVersionGet(fwVer);
+    fm.BootloaderAddrGet(&bootAddr);
 	InitUI();
 }
 

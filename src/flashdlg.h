@@ -44,6 +44,12 @@ public:
     /// Connected socket
     QTcpSocket *socket;
 
+    uint8_t id[4];
+
+    uint8_t fwVer[2];
+
+    uint32_t bootAddr;
+
 	/********************************************************************//**
 	 * Default constructor.
 	 ************************************************************************/
@@ -71,24 +77,9 @@ public:
 	 ************************************************************************/
 	FlashInfoTab(FlashDialog *dlg);
 
-public slots:
-	/********************************************************************//**
-	 * This slot shall be run when the tab of the owner class changes. If
-	 * selected tab is the INFO tab, updates the programmer information
-	 *
-	 * \param[in] Selected tab index.
-	 ************************************************************************/
-	void TabChange(int index);
-
 private:
 	/// Parent dialog
 	FlashDialog *dlg;
-	/// Programmer version label
-	QLabel *progVer;
-	/// Manufacturer ID label
-	QLabel *manId;
-	/// Device ID label
-	QLabel *devId;
 
 	/********************************************************************//**
 	 * Initialize the tab interface

@@ -1,10 +1,13 @@
+/// \todo Make this module usable by the CLI interface (and remove wflash
+/// module). This requires removing error messageboxes and maybe some more
+/// things
+
 #include <QApplication>
 #include <QtWidgets/QMessageBox>
 #include <stdlib.h>
 #include "flash_man.h"
 #include "util.h"
 #include "wflash.h"
-#include "rom_head.h"
 
 
 FlashMan::FlashMan(QTcpSocket *socket) {
@@ -190,6 +193,25 @@ int FlashMan::IdsGet(uint8_t ids[4]) {
 	return 0;
 }
 
+int FlashMan::BootloaderAddrGet(uint32_t *addr) {
+    WfBuf buf;
+
+    buf.cmd.cmd = WF_CMD_BLOADER_START;
+    buf.cmd.len = 0;
+
+    if (CmdSend(&buf.cmd) < 0) {
+        return 1;
+    }
+
+    if (ReplyRecv(&buf, 4) < 0) {
+        return 1;
+    }
+
+    *addr = buf.cmd.dwdata[0];
+
+    return 0;
+}
+
 uint8_t *FlashMan::AllocFile(const char *path, uint32_t *len) {
     FILE *rom;
 	uint8_t *writeBuf;
@@ -218,9 +240,6 @@ uint8_t *FlashMan::AllocFile(const char *path, uint32_t *len) {
     }
     // Do byte swaps
     ByteSwapBuf(writeBuf, *len);
-
-    // Patch header
-    RomHeadPatch(writeBuf);
 
 
     return writeBuf;

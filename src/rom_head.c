@@ -6,6 +6,7 @@
  * bootloader to be launched instead of the flashed ROM.
  ****************************************************************************/
 #include "rom_head.h"
+#include "util.h"
 
 /// ROM header information structure, including interrupt vectors
 typedef struct {
@@ -61,5 +62,5 @@ void RomHeadPatch(uint8_t *head, uint32_t entryPoint) {
 	rh->notes[1] = rh->entryPoint>>8;
 	rh->notes[0] = rh->entryPoint;
 	// Patch the entry point for the bootloader to always be executed
-	rh->entryPoint = entryPoint;
+	rh->entryPoint = ByteSwapDWord(entryPoint);
 }

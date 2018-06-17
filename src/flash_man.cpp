@@ -89,7 +89,6 @@ int FlashMan::Program(const uint8_t *data, bool autoErase,
 	emit ValueChanged(0);
 	emit StatusChanged("Programming");
 	QApplication::processEvents();
-    puts("PROGRAMMING");
 
     // Command successful, send payload
 	for (i = 0, addr = start; i < len;) {

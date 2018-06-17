@@ -191,7 +191,6 @@ void FlashWriteTab::ShowFileDialog(void) {
 
 void FlashWriteTab::Flash(void) {
 	uint8_t *wrBuf = NULL;
-	uint32_t start = 0;
 	uint32_t len = 0;
 	bool autoErase;
 
@@ -238,7 +237,7 @@ void FlashWriteTab::Flash(void) {
 
 	autoErase = autoCb->isChecked();
 	// Start programming
-	if (fm.Program(wrBuf, autoErase, start, len)) {
+	if (fm.Program(wrBuf, autoErase, 0, len)) {
         fm.BufFree(wrBuf);
 		dlg->progBar->setVisible(false);
 		dlg->btnQuit->setVisible(true);
@@ -266,6 +265,8 @@ FlashDialog::FlashDialog(QTcpSocket *socket) {
     bootAddr = 0;
 
     FlashMan fm(socket);
+    // Give some time after the connection for the booloader to catch up.
+    DelayMs(1000);
     fm.IdsGet(id);
     fm.BootloaderVersionGet(fwVer);
     fm.BootloaderAddrGet(&bootAddr);

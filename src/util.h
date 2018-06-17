@@ -49,6 +49,11 @@
 /// 16-bit byte swap macro
 #define ByteSwapWord(word)	do{(word) = ((word)>>8) | ((word)<<8);}while(0)
 
+/// Swaps bytes from a dword (32 bits)
+#define ByteSwapDWord(dw)	(uint32_t)((((uint32_t)(dw))>>24) |               \
+		((((uint32_t)(dw))>>8) & 0xFF00) | ((((uint32_t)(dw)) & 0xFF00)<<8) | \
+	  	(((uint32_t)(dw))<<24))
+
 #endif //_UTIL_H_
 
 /** \} */
